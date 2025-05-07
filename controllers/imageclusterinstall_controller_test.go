@@ -997,7 +997,8 @@ var _ = Describe("Reconcile", func() {
 		}
 		installerSuccess()
 		res, err := r.Reconcile(ctx, req)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("current state is: registering"))
 		Expect(res).To(Equal(ctrl.Result{}))
 
 		key := types.NamespacedName{
@@ -1295,7 +1296,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(res).To(Equal(ctrl.Result{}))
 	})
 
-	It("doesn't error when ClusterDeploymentRef is unset", func() {
+	It("sets the ClusterInstallRequirementsMet condition to false when ClusterDeploymentRef is unset", func() {
 		clusterInstall.Spec.ClusterDeploymentRef = nil
 		Expect(c.Create(ctx, clusterInstall)).To(Succeed())
 		key := types.NamespacedName{
@@ -1303,7 +1304,7 @@ var _ = Describe("Reconcile", func() {
 			Name:      clusterInstallName,
 		}
 		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: key})
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).To(HaveOccurred())
 		Expect(res).To(Equal(ctrl.Result{}))
 		Expect(c.Get(ctx, key, clusterInstall)).To(Succeed())
 		cond := findCondition(clusterInstall.Status.Conditions, hivev1.ClusterInstallRequirementsMet)
@@ -1323,7 +1324,7 @@ var _ = Describe("Reconcile", func() {
 			Name:      clusterInstallName,
 		}
 		res, err := r.Reconcile(ctx, ctrl.Request{NamespacedName: key})
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).To(HaveOccurred())
 		Expect(res).To(Equal(ctrl.Result{}))
 
 		Expect(c.Get(ctx, key, clusterInstall)).To(Succeed())
@@ -1538,7 +1539,7 @@ var _ = Describe("Reconcile", func() {
 		Expect(err).To(HaveOccurred())
 	})
 
-	It("reque in case bmh has no hw details but after adding them it succeeds", func() {
+	It("requeue in case bmh has no hw details but after adding them it succeeds", func() {
 		bmh := bmhInState(bmh_v1alpha1.StateAvailable)
 		bmh.Status.HardwareDetails = nil
 		Expect(c.Create(ctx, bmh)).To(Succeed())
@@ -1959,7 +1960,8 @@ var _ = Describe("Reconcile with DataImageCoolDownPeriod set to 1 second", func(
 		}
 		installerSuccess()
 		res, err := r.Reconcile(ctx, req)
-		Expect(err).NotTo(HaveOccurred())
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).To(ContainSubstring("Waiting for DataImage to cool down"))
 		Expect(res).To(Equal(ctrl.Result{RequeueAfter: time.Second}))
 		time.Sleep(time.Second)
 		res, err = r.Reconcile(ctx, req)
